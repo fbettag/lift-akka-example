@@ -156,7 +156,8 @@ trait LADemoFileCopyMethods {
 	}
 
     def copyFileStart(req: LADemoFileCopyInternalStart) {
-		val args = scala.Array("rsync", "--progress", req.source.path.toString, req.target.path.toString)
+		// make it real slow so people can enjoy ;)
+		val args = scala.Array("nice", "-n -20", "rsync", "--progress", req.source.path.toString, req.target.path.toString)
         val process = Runtime.getRuntime.exec(args)
         val resultBuffer = new BufferedReader(new InputStreamReader(process.getInputStream))
         var line: String = null

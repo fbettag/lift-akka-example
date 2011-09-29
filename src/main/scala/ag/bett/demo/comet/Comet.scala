@@ -123,7 +123,7 @@ class CopyComet extends CometActor {
             cachedStat = Full(a)
             ActorPing.schedule(targetActor, (request.open_!), 10 seconds)
             partialUpdate(
-                JsRaw("console.log('LADemoFileCopyQueue: '+%s)".format(a.toString)) &
+                JsRaw("console.log('LADemoFileCopyQueue: %s')".format(a.toString)) &
                 thankYouPartial("You are number %s in queue!".format(a.waiting + 1)) &
                 JsRaw("lademo.copyStatus(%s)".format(write(a)))
             )
@@ -131,7 +131,7 @@ class CopyComet extends CometActor {
         case a: LADemoFileCopyStatus =>
             cachedStat = Full(a)
             partialUpdate(
-                JsRaw("console.log('LADemoFileCopyStatus: '+%s)".format(a.toString)) &
+                JsRaw("console.log('LADemoFileCopyStatus: %s')".format(a.toString)) &
                 thankYouPartial(Group(
                     <div id="progressbar"></div>
 
@@ -143,7 +143,7 @@ class CopyComet extends CometActor {
         case a: LADemoFileCopyDone =>
             request = Empty
             partialUpdate(
-                JsRaw("console.log('LADemoFileCopyDone: '+%s)".format(a.toString)) &
+                JsRaw("console.log('LADemoFileCopyDone: %s')".format(a.toString)) &
                 thankYouPartial(
 					if (a.success) "Successfully copied!"
 					else "Failed to copy :( Please make sure the Filename does not contain any weird chars") &
