@@ -32,17 +32,24 @@ import org.joda.time._
 
 object LADemoLiftActor extends LiftActor
     with LADemoStatMethods
-    with LADemoFileCopy {
+    with LADemoFileCopyMethods {
 
     protected def messageHandler = {
         case a: LADemoStatGather =>
-            a.actor ! this.sysStatInfo
+            a.actor ! sysStatInfo
 
         case LADemoFileCopyRequestList =>
             reply(copyFileList)
 
         case a: LADemoFileCopyRequest =>
-            a.actor ! copyQueueWithInfo(a)
+            copyQueueWithInfo(a) match {
+				case stat: LADemoFileCopyInternalStart =>
+					LAScheduler.execute(() => copyFileStart(stat))
+				case _ =>
+			}
+		
+		case a: LADemoFileCopyAbortRequest =>
+			copyDequeue(a.actor)
     }
 
 }

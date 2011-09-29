@@ -99,61 +99,65 @@ case class LADemoFileCopyRequestList
 case class LADemoFileCopyList(files: List[Path])
 
 case class LADemoFileCopyRequest(actor: CometActor, file: Path)
-case class LADemoFileCopyQueued(active: Boolean, lastPing: DateTime, file: Path)
+case class LADemoFileCopyAbortRequest(actor: CometActor)
 
 sealed trait LADemoFileCopyInfo
 case class LADemoFileCopyQueue(waiting: Int) extends LADemoFileCopyInfo
 case class LADemoFileCopyStatus(file: Path, percent: Int, speed: String, remaining: String) extends LADemoFileCopyInfo
 case class LADemoFileCopyDone(success: Boolean) extends LADemoFileCopyInfo
 
-trait LADemoFileCopy {
-    import ExecHelper._
+sealed trait LADemoFileCopyInternal
+case class LADemoFileCopyInternalWait extends LADemoFileCopyInternal
+case class LADemoFileCopyInternalStart(source: Path, target: Path, actor: CometActor) extends LADemoFileCopyInternal
+
+trait LADemoFileCopyMethods {	
+
+	val copyMaxProcs = 5
 
     val copyPath = Path(Props.get("filecopy.path") openOr "/tmp/i.didnt.configure.jack")
     lazy val copyFileList: LADemoFileCopyList = {
+		// Only list files bigger than 200MB
         val myList: List[Path] = {
             if (copyPath.exists && copyPath.isDirectory && copyPath.canWrite)
-                copyPath.children().toList
+                copyPath.children().toList.filter(_.size.getOrElse(0L).toLong > 200*1024*1024)
             else List()
         }
         (copyPath / "targets").createDirectory(failIfExists=false)
         LADemoFileCopyList(myList)
     }
 
-    var copyQueue: Map[CometActor, LADemoFileCopyQueued] = Map()
+    var copyQueue: Map[CometActor, Path] = Map()
 
-    def copyQueueWithInfo(req: LADemoFileCopyRequest): LADemoFileCopyInfo = {
-        copyQueue = copyQueue.filter(_._2.lastPing.isAfter((new DateTime).minusSeconds(30)))
-        copyQueue = copyQueue ++ (copyQueue.get(req.actor) match {
-            case Some(cq: LADemoFileCopyQueued) =>
-                Map(req.actor -> LADemoFileCopyQueued(cq.active, (new DateTime), cq.file))
-            case _ =>
-                Map(req.actor -> LADemoFileCopyQueued(false, (new DateTime), req.file))
-        })
+    def copyQueueWithInfo(req: LADemoFileCopyRequest): LADemoFileCopyInternal = {
+        copyQueue = copyQueue ++ Map(req.actor -> req.file)
 
         var countQueue = 0
-        var countActive = 0
         copyQueue.map(q =>
             if (q._1.equals(req.actor)) {
-                
                 // There are people in the queue infront of us
-                if (countQueue > 0)
-                    return LADemoFileCopyQueue(countActive)
-                
-                if (countActive < 5)
-                    return copyFileStart(req.file, copyPath / "targets" / scala.util.Random.nextLong.toString, req.actor)
+                if (countQueue >= copyMaxProcs) {
+                    req.actor ! LADemoFileCopyQueue(countQueue-copyMaxProcs)
+					return LADemoFileCopyInternalWait()
+				}
+                // There is nobody infront of us!
+                if (countQueue < copyMaxProcs) {
+					val target = copyPath / "targets" / scala.util.Random.nextLong.toString
+					return LADemoFileCopyInternalStart(req.file, target, req.actor)
+				}
             }
-            else if (q._2.active)
-                countActive += 1
             else countQueue += 1
         )
-        
-        LADemoFileCopyQueue(0)
+
+		return LADemoFileCopyInternalWait()
     }
 
-    def copyFileStart(source: Path, target: Path, actor: CometActor): LADemoFileCopyInfo = {
-        val cmd = "rsync --progress %s %s".format(source.path, target.path)
-        val process = Runtime.getRuntime.exec(cmd)
+	def copyDequeue(actor: CometActor) {
+		copyQueue = copyQueue - actor
+	}
+
+    def copyFileStart(req: LADemoFileCopyInternalStart) {
+		val args = scala.Array("rsync", "--progress", req.source.path.toString, req.target.path.toString)
+        val process = Runtime.getRuntime.exec(args)
         val resultBuffer = new BufferedReader(new InputStreamReader(process.getInputStream))
         var line: String = null
 
@@ -165,23 +169,18 @@ trait LADemoFileCopy {
                 line match {
                     case RsyncStat(percentS, speed, remaining) =>
                         val percent = try { percentS.toInt } catch { case _ => 0 }
-                        actor ! LADemoFileCopyStatus(source.name, percent, speed, remaining)
-                    case _ =>
+                        req.actor ! LADemoFileCopyStatus(req.source.name, percent, speed, remaining)
+                    case _ => println(line)
                 }
             }
         } while (line != null)
 
         process.waitFor
         resultBuffer.close
-        
-        // Fire this first, so there won't be any requests occuring
-        actor ! LADemoFileCopyDone(process.exitValue == 0)
-        
-        // Remove the actor from the queue
-        copyQueue = copyQueue - actor
-        
-        // Dummy-wise, make really really sure the comet actor stops requesting.
-        LADemoFileCopyDone(process.exitValue == 0)
+
+        // Remove the actor from the queue and tell the frontend that we're finished.
+        copyQueue = copyQueue - req.actor
+        req.actor ! LADemoFileCopyDone(process.exitValue == 0)
     }
 
 }

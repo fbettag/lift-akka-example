@@ -1,35 +1,37 @@
 <div class="lift:surround?with=default;at=content">
   <h2>Welcome to the Liftweb/Akka example project!</h2>
   <p>
-    This project was presented at the Scala LiftOff Conference 2011
-    in London. The complete source code can be found
-    at <a href="http://github.com/fbettag/lift-akka-example" target="_blank">my github repository</a>.
+    This project was presented at the Scala LiftOff Conference 2011 in London.<br/>
+	It was part of my Talk <a href="http://goodstuff.im/fbettag-liftweb-in-the-real-world-a-hyper-pol">Liftweb in the Real World. A hyper-polygot's tale.</a>
   </p>
 
   <h2>Duplicate a file (on a remote host)</h2>
   <p>
-    In this example, you can decide which file you want the
-    remote-server to duplicate. It will give you feedback on how much
-    has been copied through a jQuery-UI Dialog with a Progressbar
-    attached to it.
+    Choose a file that you want a backend Actor to duplicate with
+	<a href="http://www.samba.org/ftp/rsync/rsync.html" target="_blank">rsync</a>.
+	The parsed output will be "streamed" via Comet and produce a nice jQuery-UI Progressbar.
+	It will only show files <strong>larger</strong> than 200MB which reside within
+	the directory set as <strong>filecopy.path</strong> in .props. This works with either
+	a LiftActor or an AkkaActor (both included in source).
   </p>
   <ul lift="comet?type=CopyComet" id="comet_copy_list">
     <li><a href="#">None yet</a></li>
   </ul>
 
+  <p>  </p>
   <h2>How does it all work?</h2>
   <p>
     We are combining the power of <a href="http://akka.io" target="_blank">Akka</a>
     with <a href="http://liftweb.net" target="_blank">Liftweb's</a> ability to perform
     Comet-style updates on the client's browser. None of this is
     scheduled AJAX, it's all Comet. The copy-process in the background
-	uses <a href="http://www.samba.org/ftp/rsync/rsync.html" target="_blank">rsync</a>, so make sure it is in <strong>PATH</strong>.
+	uses <a href="http://www.samba.org/ftp/rsync/rsync.html" target="_blank">rsync</a>,
+	so make sure it is in <strong>PATH</strong>.
   </p>
 
-  <h2>Where to get it?</h2>
+  <h2>How to get the source?</h2>
   <p>
-    As already stated, please feel free to look or change the source
-    code as you wish. The full source code can be found on <a href="http://github.com/fbettag/lift-akka-example" target="_blank">github</a>.
+    The full sourcecode and instructions can be found in my <a href="http://github.com/fbettag/lift-akka-example" target="_blank">GitHub repository</a>.
   </p>
 </div>
 

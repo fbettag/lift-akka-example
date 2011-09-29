@@ -100,18 +100,12 @@ class CopyComet extends CometActor {
     // Make json-serialization for "write" work.
     implicit val formats = Serialization.formats(NoTypeHints)
 
-    // If this actor is not used for 2 minutes, destroy it
-    override def lifespan: Box[TimeSpan] = Full(2 minutes)
+    // If this actor is not used for 10 seconds, destroy it
+    override def lifespan: Box[TimeSpan] = Full(10 seconds)
 
     // Method for sending request to Actor
     val targetActor = LADemoLiftActor
     //def targetActor = LADemoAkkaActor
-
-    def reschedule = request match {
-        case Full(a: LADemoFileCopyRequest) =>
-            ActorPing.schedule(targetActor, a, 10 seconds)
-        case _ =>
-    }
 
     val fileList: List[Path] = {
         (targetActor !! LADemoFileCopyRequestList) match {
@@ -127,32 +121,33 @@ class CopyComet extends CometActor {
     override def lowPriority = {
         case a: LADemoFileCopyQueue =>
             cachedStat = Full(a)
-            reschedule
+            ActorPing.schedule(targetActor, (request.open_!), 10 seconds)
             partialUpdate(
-                //JsRaw("console.log('LADemoFileCopyQueue: '+%s)".format(write(a))) &
-                //JsRaw("lademo.copyStatus(%s)".format(write(a))) &
-                thankYouPartial("You are number %s in queue!".format(a.waiting))
+                JsRaw("console.log('LADemoFileCopyQueue: '+%s)".format(a.toString)) &
+                thankYouPartial("You are number %s in queue!".format(a.waiting + 1)) &
+                JsRaw("lademo.copyStatus(%s)".format(write(a)))
             )
         
         case a: LADemoFileCopyStatus =>
             cachedStat = Full(a)
-            reschedule
             partialUpdate(
-                //JsRaw("console.log('LADemoFileCopyStatus: '+%s)".format(write(a))) &
+                JsRaw("console.log('LADemoFileCopyStatus: '+%s)".format(a.toString)) &
                 thankYouPartial(Group(
                     <div id="progressbar"></div>
-                    <strong>Copy for file '{a.file.name}' @ {a.speed} in progress! {a.percent}% copied! {a.remaining} remaining.</strong>
+
+                    <strong>Copy for file '{a.file.name}' @ {a.speed} in progress! {a.remaining} remaining.</strong>
                 )) &
                 JsRaw("lademo.copyStatus(%s)".format(write(a)))
             )
-            println("Copy for file '%s' @ %s in progress! %s%% copied! %s remaining.".format(a.file.name, a.speed, a.percent, a.remaining))
         
         case a: LADemoFileCopyDone =>
             request = Empty
             partialUpdate(
-                //JsRaw("console.log(%s)".format(write(a))) &
-                //JsRaw("lademo.copyStatus(%s)".format(write(a))) &
-                thankYouPartial(if (a.success) "Successfully copied!" else "Failed to copy :(")
+                JsRaw("console.log('LADemoFileCopyDone: '+%s)".format(a.toString)) &
+                thankYouPartial(
+					if (a.success) "Successfully copied!"
+					else "Failed to copy :( Please make sure the Filename does not contain any weird chars") &
+	            JsRaw("lademo.copyStatus(%s)".format(write(a)))
             )
     }
 
@@ -161,6 +156,10 @@ class CopyComet extends CometActor {
         targetActor ! (request.open_!)
         Noop
     }
+
+	override def localShutdown() {
+		targetActor ! LADemoFileCopyAbortRequest(this)
+	}
 
     // Cached reply from the backend.
     // Otherwise everybody after a pageload has to wait
