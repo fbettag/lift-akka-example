@@ -1,13 +1,24 @@
 lift.akka.example
 =======
 
-Edit src/main/resources/props/default.props and change the path to something with files (e.g. your Downloads folder). It also needs RW permissions on that folder in order to write the copied files into a folder called "target" (right inside the specified dir).
+What's this??
 
-After that it's traight on, just run:
+This project was presented at the Scala LiftOff Conference 2011 in London.
+It was part of my Talk [Liftweb in the Real World. A hyper-polygot's tale.](http://goodstuff.im/fbettag-liftweb-in-the-real-world-a-hyper-pol).
+
+
+## How to run?
+
+Edit src/main/resources/props/default.props and change the path to something with files (e.g. your Downloads folder). It also needs **writing permissions** on that folder in order to write the copied files into a folder called "target" (right inside the specified dir).
+
+After that it's straight on, just run:
 
 ```
 mvn jetty:run
 ```
+
+
+## Thanks
 
 Thanks to everybody in the Lift Community and on [Liftweb Google Groups](http://groups.google.com/group/liftweb).
 
