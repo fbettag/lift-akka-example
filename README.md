@@ -5,7 +5,7 @@ What's this??
 This project was presented at the Scala LiftOff Conference 2011 in London.
 It was part of my Talk [Liftweb in the Real World. A hyper-polygot's tale.](http://goodstuff.im/fbettag-liftweb-in-the-real-world-a-hyper-pol)
 
-It enables you to choose between a local LiftActor running your WebServer or you can select an Akka Remote Actor which will allow you to run the main-functionailty on another server.
+It enables you to choose between a **local LiftActor running in your WebServer or** you can select an **Akka Remote Actor** which will allow you to run the main-functionailty on another server.
 
 The goal was to build a sample application, which utilizes Comet to give a user feedback of an rsync-copy operation.
 
