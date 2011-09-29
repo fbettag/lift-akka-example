@@ -1,6 +1,13 @@
 lift.akka.example
 =======
 
+Edit src/main/resources/props/default.props and change the path to something with files (e.g. your Downloads folder). It also needs RW permissions on that folder in order to write the copied files into a folder called "target" (right inside the specified dir).
+
+After that it's traight on, just run:
+
+```
+mvn jetty:run
+```
 
 Thanks to everybody in the Lift Community and on [Liftweb Google Groups](http://groups.google.com/group/liftweb).
 
