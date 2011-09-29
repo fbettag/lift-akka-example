@@ -17,8 +17,6 @@
 
 package ag.bett.demo.comet
 
-import ag.bett.demo.lib.{ExecHelper => EH, DateTimeHelpers => DTH}
-
 import net.liftweb.http._
 import net.liftweb.actor._
 import net.liftweb.http.S._
