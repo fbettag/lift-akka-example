@@ -21,6 +21,23 @@ mvn jetty:run
 ```
 
 
+## With Akka?
+
+If you simply want a local AkkaActor, then uncomment the 4 lines respectively in src/main/scala/ag/bett/demo/comet/Traitor.scala. If you search for "Akka", you'll find 2 blocks in both of the traits, simple (un)commeting will suffice.
+
+
+## With Akka RemoteActor?
+
+Edit src/main/resources/props/default.props and change the akka.remote.host to the appropriate hostname or ip.
+
+```
+cd akka
+mvn package
+cp target/akka.backend*.jar your/path/to/akka/deploy/
+your/path/to/akka/bin/akka
+```
+
+
 ## Thanks
 
 Thanks to everybody in the Lift Community and on [Liftweb Google Groups](http://groups.google.com/group/liftweb).
