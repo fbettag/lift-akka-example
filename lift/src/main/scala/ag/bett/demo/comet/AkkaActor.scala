@@ -36,7 +36,11 @@ object LADemoAkkaRemoteActor {
     val actorHost = Props.get("akka.remote.host") openOr("127.0.0.1")
     val actorPort = Props.get("akka.remote.port").openOr("2552").toInt
 
-    lazy val actor = Actor.remote.actorOf[LADemoAkkaActorService](actorHost, actorPort)
+    lazy val actor = remote.actorFor("LADemoAkkaActorService", actorHost, actorPort).start
+    //     val actor = Actor.remote.actorOf[LADemoAkkaActorService](actorHost, actorPort)
+    //     actor.start
+    //     actor
+    // }
 }
 
 /* Akka Remote Boot-class */
@@ -56,7 +60,7 @@ class LADemoAkkaRemoteActorBoot {
 class LADemoAkkaActorService extends Actor
     with LADemoStatMethods
     with LADemoFileCopyMethods {
-
+        
     override def receive = {
         case a: LADemoStatGather =>
             a.actor ! sysStatInfo

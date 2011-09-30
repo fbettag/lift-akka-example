@@ -38,6 +38,8 @@ case class LADemoStatGather(actor: CometActor)
 case class LADemoStatInfo(procs: Int, memtotal: Int, memused: Int)
 
 trait LADemoStatMethods {
+    println("LADemoStatMethods starting...")
+
     val sysStatDummy = LADemoStatInfo(5, 1024, 768)
 
     var sysStatInfoCache = (sysStatDummy, (new DateTime).minusMinutes(1))
@@ -111,6 +113,7 @@ trait LADemoStatMethods {
         (process.exitValue, lineList.reverse)
     }
 
+    println("LADemoStatMethods started successfully")
 }
 
 
@@ -130,19 +133,22 @@ case class LADemoFileCopyInternalWait extends LADemoFileCopyInternal
 case class LADemoFileCopyInternalStart(source: Path, target: Path, actor: CometActor) extends LADemoFileCopyInternal
 
 trait LADemoFileCopyMethods {	
+    println("LADemoFileCopyMethods starting...")
 
     val copyMaxProcs = 5
 
     val copyPath = Path(Props.get("filecopy.path") openOr "/tmp/i.didnt.configure.jack")
     lazy val copyFileList: LADemoFileCopyList = {
-        // Only list files bigger than 200MB
-        val myList: List[Path] = {
-            if (copyPath.exists && copyPath.isDirectory && copyPath.canWrite)
-            copyPath.children().toList.filter(_.size.getOrElse(0L).toLong > 200*1024*1024)
-            else List()
-        }
-        (copyPath / "targets").createDirectory(failIfExists=false)
-        LADemoFileCopyList(myList)
+        try {
+            // Only list files bigger than 200MB
+            val myList: List[Path] = {
+                if (copyPath.exists && copyPath.isDirectory && copyPath.canWrite)
+                copyPath.children().toList.filter(_.size.getOrElse(0L).toLong > 200*1024*1024)
+                else List()
+            }
+            (copyPath / "targets").createDirectory(failIfExists=false)
+            LADemoFileCopyList(myList)
+        } catch { case _ => LADemoFileCopyList(List())}
     }
 
     var copyQueue: Map[CometActor, Path] = Map()
@@ -177,6 +183,7 @@ trait LADemoFileCopyMethods {
     def copyFileStart(req: LADemoFileCopyInternalStart) {
         // make it real slow so people can enjoy ;)
         val args = scala.Array("nice", "-n -20", "rsync", "--progress", req.source.path.toString, req.target.path.toString)
+        println("File Copy: " + args.mkString(" "))
         val process = Runtime.getRuntime.exec(args)
         val resultBuffer = new BufferedReader(new InputStreamReader(process.getInputStream))
         var line: String = null
@@ -203,4 +210,5 @@ trait LADemoFileCopyMethods {
         req.actor ! LADemoFileCopyDone(process.exitValue == 0)
     }
 
+    println("LADemoFileCopyMethods started successfully")
 }
