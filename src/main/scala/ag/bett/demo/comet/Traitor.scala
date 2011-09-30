@@ -48,7 +48,6 @@ trait LADemoStatMethods {
         return sysStatInfoCache._1
 
         var meminfo = sysStatExec(List("top", "-l 1"))
-        println("top -l 1 stat: %s".format(meminfo._1))
         // OSX mode
         if (meminfo._1 == 0) {
             val TopStats = """.*PhysMem: (\d+)M wired, (\d+)M active, (\d+)M inactive, (\d+)M used, (\d+)M free.*""".r
@@ -68,17 +67,19 @@ trait LADemoStatMethods {
         } else {
             try {
                 var total = sysStatDummy.memtotal
-                val totalMatch = "^MemTotal: (\\d+).*".r
+                val totalMatch = "^MemTotal:\\s+(\\d+).*".r
                 var free = sysStatDummy.memused
-                val freeMatch = "^MemFree: (\\d+).*".r
+                val freeMatch = "^MemFree:\\s+(\\d+).*".r
                 
-                scala.io.Source.fromURL("/proc/meminfo").getLines().foreach(f => f match {
-                    case totalMatch(totalS) => try { total = totalS.toInt } catch { case _ => }
-                    case freeMatch(freeS) => try { free = freeS.toInt } catch { case _ => }
+                val memstats = sysStatExec(List("cat", "/proc/meminfo"))
+                if (memstats._1 != 0) return sysStatDummy
+                memstats._2.foreach(f => f match {
+                    case totalMatch(totalS) => try { total = totalS.toInt / 1024 } catch { case _ => }
+                    case freeMatch(freeS) => try { free = freeS.toInt / 1024 } catch { case _ => }
                     case _ =>
                 })
  
-                val procstats = sysStatExec(List("ps aux"))
+                val procstats = sysStatExec(List("ps", "aux"))
                 if (procstats._1 != 0) return sysStatDummy
                 sysStatInfoCache = (LADemoStatInfo(procstats._2.length -1, total, total-free), new DateTime)
                 return sysStatInfoCache._1
