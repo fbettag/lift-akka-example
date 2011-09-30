@@ -47,7 +47,7 @@ trait LADemoStatMethods {
         if (sysStatInfoCache._2.isAfter(cleanDate))
         return sysStatInfoCache._1
 
-        var meminfo = sysStatExec("top -l 1")
+        var meminfo = sysStatExec(List("top", "-l 1"))
         println("top -l 1 stat: %s".format(meminfo._1))
         // OSX mode
         if (meminfo._1 == 0) {
@@ -78,7 +78,7 @@ trait LADemoStatMethods {
                     case _ =>
                 })
  
-                val procstats = sysStatExec("ps aux | wc -l")
+                val procstats = sysStatExec(List("ps aux"))
                 if (procstats._1 != 0) return sysStatDummy
                 sysStatInfoCache = (LADemoStatInfo(procstats._2.length -1, total, total-free), new DateTime)
                 return sysStatInfoCache._1
@@ -91,7 +91,6 @@ trait LADemoStatMethods {
         return sysStatDummy
     }
 
-    def sysStatExec(cmd: String): (Int, List[String]) = sysStatExec(List(cmd))
     def sysStatExec(cmd: List[String]): (Int, List[String]) = {
         val process = Runtime.getRuntime.exec(cmd.toArray)
         val resultBuffer = new BufferedReader(new InputStreamReader(process.getInputStream))
