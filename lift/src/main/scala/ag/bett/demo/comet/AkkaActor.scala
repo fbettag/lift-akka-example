@@ -17,27 +17,52 @@
 
 package ag.bett.demo.comet
 
-import net.liftweb.http._
+import akka.actor._
+import akka.actor.Actor._
+import akka.config.Supervision._
 import net.liftweb.actor._
-import net.liftweb.http.S._
 import net.liftweb.util._
-import net.liftweb.util.Helpers._
-import net.liftweb.common._
-
-import java.util.Date
 import org.joda.time._
 
 
-object LADemoLiftActor extends LiftActor
+/* Local akka Actor (like LiftActor) */
+object LADemoAkkaActor {
+    lazy val actor = actorOf[LADemoAkkaActorService].start
+
+}
+
+/* Remote Actor */
+object LADemoAkkaRemoteActor {
+    val actorHost = Props.get("akka.remote.host") openOr("127.0.0.1")
+    val actorPort = Props.get("akka.remote.port").openOr("2552").toInt
+
+    lazy val actor = Actor.remote.actorOf[LADemoAkkaActorService](actorHost, actorPort)
+}
+
+/* Akka Remote Boot-class */
+class LADemoAkkaRemoteActorBoot {
+
+    val config = SupervisorConfig(
+        AllForOneStrategy(List(classOf[Exception]), 3, 1000),
+        Supervise(actorOf[LADemoAkkaActorService], Permanent) :: Nil)
+
+    val factory = SupervisorFactory(config)
+
+    factory.newInstance.start
+}
+
+
+/* Service implementation */
+class LADemoAkkaActorService extends Actor
     with LADemoStatMethods
     with LADemoFileCopyMethods {
 
-    protected def messageHandler = {
+    override def receive = {
         case a: LADemoStatGather =>
             a.actor ! sysStatInfo
 
         case LADemoFileCopyRequestList =>
-            reply(copyFileList)
+            self.reply(copyFileList)
 
         case a: LADemoFileCopyRequest =>
             copyQueueWithInfo(a) match {
@@ -46,9 +71,14 @@ object LADemoLiftActor extends LiftActor
 				case _ =>
 			}
 		
+		case a: LADemoFileCopyInternalStart =>
+		    copyFileStart(a)
+
 		case a: LADemoFileCopyAbortRequest =>
 			copyDequeue(a.actor)
     }
 
 }
+
+object LADemoAkkaActorService extends LADemoAkkaActorService
 

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project>
+	<parent>
+		<groupId>ag.bett.demo</groupId>
+		<artifactId>lift.akka.example</artifactId>
+		<version>1.0</version>
+	</parent>
+
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>ag.bett.demo</groupId>
+	<artifactId>akka.backend</artifactId>
+	<version>1.0</version>
+	<packaging>jar</packaging>
+</project>

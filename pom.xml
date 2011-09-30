@@ -8,7 +8,7 @@
 	<groupId>ag.bett.demo</groupId>
 	<artifactId>lift.akka.example</artifactId>
 	<version>1.0</version>
-	<packaging>war</packaging>
+	<packaging>pom</packaging>
 	<name>Bettag Systems lift.akka.example Project</name>
 	<inceptionYear>2010</inceptionYear>
 	<properties>
@@ -47,6 +47,11 @@
 			<url>http://scala-tools.org/repo-releases</url>
 		</pluginRepository>
 	</pluginRepositories>
+
+	<modules>
+		<module>akka/</module>
+		<module>lift/</module>
+	</modules>
 
 	<dependencies>
 		<dependency>

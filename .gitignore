@@ -61,6 +61,7 @@ tm.out
 *.tm.epoch
 multiverse.log
 
+akka/microkernel-*/deploy/*
 
 # remove for production releases
 # or major changes

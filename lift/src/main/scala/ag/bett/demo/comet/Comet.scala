@@ -33,16 +33,30 @@ import net.liftweb.util.Helpers._
 import net.liftweb.common._
 import net.liftweb.json._
 import net.liftweb.json.Serialization.write
+import akka.actor.Scheduler
 
 import scalax.file.Path
 
 import java.util.Date
+import java.util.concurrent.TimeUnit
+
 import org.joda.time._
 
 import scala.xml._
 
 
 class StatComet extends CometActor {
+
+    /* LiftActor */
+    //val targetActor = LADemoLiftActor
+    //def reschedule = ActorPing.schedule(targetActor, targetRequest, 10 seconds)
+
+    /* Akka */
+    val targetActor = LADemoAkkaActor.actor
+    //val targetActor = LADemoAkkaRemoteActor.actor
+    def reschedule = Scheduler.scheduleOnce(targetActor, targetRequest, 10, TimeUnit.SECONDS)
+
+
     override def defaultPrefix = Full("EasyPeasyStatsWithComet")
 
     // Make json-serialization for "write" work.
@@ -51,10 +65,7 @@ class StatComet extends CometActor {
     // If this actor is not used for 2 minutes, destroy it
     override def lifespan: Box[TimeSpan] = Full(2 minutes)
 
-    // Method for sending request to Actor
     val targetRequest = LADemoStatGather(this)
-    val targetActor = LADemoLiftActor
-    //def targetActor = LADemoAkkaActor
 
     targetActor ! targetRequest
 
@@ -66,9 +77,7 @@ class StatComet extends CometActor {
                 JsRaw("console.log('LADemoStatInfo: ' + %s)".format(write(a))) &
                 SetHtml("comet_stats", cssSel.apply(defaultHtml))
             )
-            
-            // reschedule
-            ActorPing.schedule(targetActor, targetRequest, 10 seconds)
+            reschedule
     }
 
     // Cached reply from the backend.
@@ -95,6 +104,25 @@ class StatComet extends CometActor {
 
 
 class CopyComet extends CometActor {
+    
+    /* LiftActor */
+    //val targetActor = LADemoLiftActor
+    //def reschedule = request match {
+    //     case Full(a: LADemoFileCopyRequest) =>
+    //         ActorPing.schedule(targetActor, a, 10 seconds)
+    //     case _ =>
+    // }
+
+    /* Akka */
+    val targetActor = LADemoAkkaActor.actor
+    //val targetActor = LADemoAkkaRemoteActor.actor
+    def reschedule = request match {
+        case Full(a: LADemoFileCopyRequest) =>
+            Scheduler.scheduleOnce(targetActor, a, 10, TimeUnit.SECONDS)
+        case _ =>
+    }
+
+
     override def defaultPrefix = Full("NiceFileCopyWithComet")
 
     // Make json-serialization for "write" work.
@@ -103,13 +131,11 @@ class CopyComet extends CometActor {
     // If this actor is not used for 10 seconds, destroy it
     override def lifespan: Box[TimeSpan] = Full(10 seconds)
 
-    // Method for sending request to Actor
-    val targetActor = LADemoLiftActor
-    //def targetActor = LADemoAkkaActor
-
     val fileList: List[Path] = {
-        (targetActor !! LADemoFileCopyRequestList) match {
+        val repl: Any = targetActor !! LADemoFileCopyRequestList
+        repl match {
             case Full(copylist: LADemoFileCopyList) => copylist.files
+            case Some(copylist: LADemoFileCopyList) => copylist.files
             case _ => List()
         }
     }
@@ -121,7 +147,7 @@ class CopyComet extends CometActor {
     override def lowPriority = {
         case a: LADemoFileCopyQueue =>
             cachedStat = Full(a)
-            ActorPing.schedule(targetActor, (request.open_!), 10 seconds)
+            reschedule
             partialUpdate(
                 JsRaw("console.log('LADemoFileCopyQueue: %s')".format(a.toString)) &
                 thankYouPartial("You are number %s in queue!".format(a.waiting + 1)) &
