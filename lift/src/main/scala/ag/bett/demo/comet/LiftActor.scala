@@ -19,6 +19,7 @@ package ag.bett.demo.comet
 
 import net.liftweb.actor._
 import net.liftweb.common._
+import ag.bett.demo.actor._
 
 
 object LADemoLiftActor extends LiftActor

@@ -9,16 +9,8 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>ag.bett.demo</groupId>
-	<artifactId>lift.frontend</artifactId>
+	<artifactId>demo.libs</artifactId>
 	<version>1.0</version>
-	<packaging>war</packaging>
-	
-	<dependencies>
-		<dependency>
-		    <groupId>ag.bett.demo</groupId>
-		    <artifactId>demo.libs</artifactId>
-		    <version>1.0</version>
-		</dependency>
-	</dependencies>
+	<packaging>jar</packaging>
 
 </project>

@@ -15,7 +15,7 @@
 *
 */
 
-package ag.bett.demo.comet
+package ag.bett.demo.actor
 
 import net.liftweb.http._
 import net.liftweb.actor._
@@ -33,6 +33,7 @@ import scala.xml._
 
 import java.lang.reflect._
 import java.io._
+
 
 case class LADemoStatGather(actor: CometActor)
 case class LADemoStatInfo(procs: Int, memtotal: Int, memused: Int)
@@ -118,14 +119,14 @@ trait LADemoStatMethods {
 
 
 case class LADemoFileCopyRequestList
-case class LADemoFileCopyList(files: List[Path])
+case class LADemoFileCopyList(files: Map[String, Int])
 
-case class LADemoFileCopyRequest(actor: CometActor, file: Path)
+case class LADemoFileCopyRequest(actor: CometActor, file: String)
 case class LADemoFileCopyAbortRequest(actor: CometActor)
 
 sealed trait LADemoFileCopyInfo
 case class LADemoFileCopyQueue(waiting: Int) extends LADemoFileCopyInfo
-case class LADemoFileCopyStatus(file: Path, percent: Int, speed: String, remaining: String) extends LADemoFileCopyInfo
+case class LADemoFileCopyStatus(file: String, percent: Int, speed: String, remaining: String) extends LADemoFileCopyInfo
 case class LADemoFileCopyDone(success: Boolean) extends LADemoFileCopyInfo
 
 sealed trait LADemoFileCopyInternal
@@ -141,20 +142,21 @@ trait LADemoFileCopyMethods {
     lazy val copyFileList: LADemoFileCopyList = {
         try {
             // Only list files bigger than 200MB
-            val myList: List[Path] = {
-                if (copyPath.exists && copyPath.isDirectory && copyPath.canWrite)
-                copyPath.children().toList.filter(_.size.getOrElse(0L).toLong > 200*1024*1024)
-                else List()
-            }
+            var myList: Map[String, Int] = Map()
+            if (copyPath.exists && copyPath.isDirectory && copyPath.canWrite)
+                copyPath.children().toList
+                    .filter(_.size.getOrElse(0L).toLong > 200*1024*1024)
+                    .foreach(f => myList = myList ++ Map(f.name.toString -> (f.size.getOrElse(0L).toLong / 1024 / 1024).toInt))
+
             (copyPath / "targets").createDirectory(failIfExists=false)
             LADemoFileCopyList(myList)
-        } catch { case _ => LADemoFileCopyList(List())}
+        } catch { case _ => LADemoFileCopyList(Map())}
     }
 
     var copyQueue: Map[CometActor, Path] = Map()
 
     def copyQueueWithInfo(req: LADemoFileCopyRequest): LADemoFileCopyInternal = {
-        copyQueue = copyQueue ++ Map(req.actor -> req.file)
+        copyQueue = copyQueue ++ Map(req.actor -> Path(req.file))
 
         var countQueue = 0
         copyQueue.map(q =>
@@ -167,7 +169,7 @@ trait LADemoFileCopyMethods {
                 // There is nobody infront of us!
                 if (countQueue < copyMaxProcs) {
                     val target = copyPath / "targets" / scala.util.Random.nextLong.toString
-                    return LADemoFileCopyInternalStart(req.file, target, req.actor)
+                    return LADemoFileCopyInternalStart(Path(req.file), target, req.actor)
                 }
             }
             else countQueue += 1

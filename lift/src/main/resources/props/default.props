@@ -1,4 +1,4 @@
-filecopy.path=/Volumes/Data/Downloads
+filecopy.path=/Volumes/Daten/Downloads
 
 akka.remote.host=127.0.0.1
 akka.remote.port=2552

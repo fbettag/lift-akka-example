@@ -18,6 +18,7 @@
 package ag.bett.demo.comet
 
 import ag.bett.demo.lib.{DateTimeHelpers => DTH}
+import ag.bett.demo.actor._
 
 import net.liftweb.http._
 import net.liftweb.actor._
@@ -52,8 +53,8 @@ class StatComet extends CometActor {
     //def reschedule = ActorPing.schedule(targetActor, targetRequest, 10 seconds)
 
     /* Akka */
-    val targetActor = LADemoAkkaActor.actor
-    //val targetActor = LADemoAkkaRemoteActor.actor
+    //val targetActor = LADemoAkkaActor.actor
+    val targetActor = LADemoAkkaRemoteActor.actor
     def reschedule = Scheduler.scheduleOnce(targetActor, targetRequest, 10, TimeUnit.SECONDS)
 
 
@@ -114,8 +115,8 @@ class CopyComet extends CometActor {
     // }
 
     /* Akka */
-    val targetActor = LADemoAkkaActor.actor
-    //val targetActor = LADemoAkkaRemoteActor.actor
+    //val targetActor = LADemoAkkaActor.actor
+    val targetActor = LADemoAkkaRemoteActor.actor
     def reschedule = request match {
         case Full(a: LADemoFileCopyRequest) =>
             Scheduler.scheduleOnce(targetActor, a, 10, TimeUnit.SECONDS)
@@ -131,12 +132,12 @@ class CopyComet extends CometActor {
     // If this actor is not used for 10 seconds, destroy it
     override def lifespan: Box[TimeSpan] = Full(10 seconds)
 
-    val fileList: List[Path] = {
+    val fileList: Map[String, Int] = {
         val repl: Any = targetActor !! LADemoFileCopyRequestList
         repl match {
             case Full(copylist: LADemoFileCopyList) => copylist.files
             case Some(copylist: LADemoFileCopyList) => copylist.files
-            case _ => List()
+            case _ => Map()
         }
     }
     
@@ -177,7 +178,7 @@ class CopyComet extends CometActor {
             )
     }
 
-    def startFileCopy(file: Path): JsCmd = {
+    def startFileCopy(file: String): JsCmd = {
         request = Full(LADemoFileCopyRequest(this, file))
         targetActor ! (request.open_!)
         Noop
@@ -202,14 +203,11 @@ class CopyComet extends CometActor {
         (request match {
             case Full(a: LADemoFileCopyRequest) =>
                 "*" #>              <strong>Waiting for backend response..</strong>
-            case _ if (fileList.length == 0) =>
+            case _ if (fileList.toList.length == 0) =>
                 "*" #>              <strong>No files found! Check the filecopy.path setting in .props!</strong>
             case _  =>
                 "li *" #>           fileList.map(f =>
-                    "a" #> a(() => startFileCopy(f), Text("%s %sMB".format(f.name, f.size match {
-                        case Some(size: Long) => size / 1024 / 1024
-                        case _ => 0
-                    })))
+                    "a" #> a(() => startFileCopy(f._1), Text("%s %sMB".format(f._1, f._2)))
                 )
         })
 

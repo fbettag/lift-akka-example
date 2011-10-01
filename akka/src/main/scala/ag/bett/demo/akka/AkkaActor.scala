@@ -15,27 +15,15 @@
  *
  */
 
-package ag.bett.demo.comet
+package ag.bett.demo.akka
 
 import akka.actor._
 import akka.actor.Actor._
-import net.liftweb.util._
-
-import ag.bett.demo.actor._
 
 
-/* Local akka Actor (like LiftActor) */
-object LADemoAkkaActor {
-    lazy val actor = actorOf[LADemoAkkaActorService].start
-
-}
-
-
-/* Remote Actor */
-object LADemoAkkaRemoteActor {
-    val actorHost = Props.get("akka.remote.host") openOr("127.0.0.1")
-    val actorPort = Props.get("akka.remote.port").openOr("2552").toInt
-
-    lazy val actor = remote.actorFor("lift-akka-example-service", actorHost, actorPort)
+/* Akka Remote Boot-class */
+class LADemoAkkaRemoteActorBoot {
+    remote.start("localhost", 2552)
+    remote.register("lift-akka-example-service", actorOf[ag.bett.demo.actor.LADemoAkkaActorService])
 
 }

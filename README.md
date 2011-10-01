@@ -17,7 +17,8 @@ Edit src/main/resources/props/default.props and change the path to something wit
 After that it's straight on, just run:
 
 ```
-mvn jetty:run
+mvn package install
+mvn jetty:run -pl lift/
 ```
 
 
@@ -28,13 +29,17 @@ If you simply want a local AkkaActor, then uncomment the 4 lines respectively in
 
 ## With Akka RemoteActor?
 
-Edit src/main/resources/props/default.props and change the akka.remote.host to the appropriate hostname or ip.
+Edit src/main/resources/props/default.props and change the akka.remote.host to the appropriate hostname or ip. Make sure you've ran **mvn package** before doing this.
 
 ```
-cd akka
-mvn package
-cp target/akka.backend*.jar your/path/to/akka/deploy/
-your/path/to/akka/bin/akka
+cd akka/
+wget <a href="http://akka.io/downloads/akka-microkernel-1.2.zip">http://akka.io/downloads/akka-microkernel-1.2.zip</a>
+unzip akka-microkernel-1.2.zip
+
+cp akka.conf akka-microkernel-1.2/config/
+cp akka/target/akka.*-dependencies.jar akka-microkernel-1.2/deploy/
+
+sh ./akka-microkernel-1.2/bin/akka (or chmod +x)
 ```
 
 
