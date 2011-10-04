@@ -17,11 +17,12 @@
 
 package ag.bett.demo.comet
 
+import ag.bett.demo.remote._
+import ag.bett.demo.lib._
+
 import akka.actor._
 import akka.actor.Actor._
-import net.liftweb.util._
-
-import ag.bett.demo.actor._
+import net.liftweb.actor._
 
 
 /* Local akka Actor (like LiftActor) */
@@ -31,11 +32,30 @@ object LADemoAkkaActor {
 }
 
 
-/* Remote Actor */
-object LADemoAkkaRemoteActor {
-    val actorHost = Props.get("akka.remote.host") openOr("127.0.0.1")
-    val actorPort = Props.get("akka.remote.port").openOr("2552").toInt
+/* Service implementation */
+class LADemoAkkaActorService extends Actor
+    with LADemoStatMethods
+    with LADemoFileCopyMethods {
 
-    lazy val actor = remote.actorFor("lift-akka-example-service", actorHost, actorPort)
+    override def receive = {
+        case a: LADemoStatGather =>
+            a.actor ! sysStatInfo
+
+        case LADemoFileCopyRequestList =>
+            self.reply(copyFileList)
+
+        case a: LADemoFileCopyRequest =>
+            copyQueueWithInfo(a) match {
+                case stat: LADemoFileCopyInternalStart =>
+                    LAScheduler.execute(() => copyFileStart(stat))
+                case _ =>
+            }
+
+        case a: LADemoFileCopyInternalStart =>
+            copyFileStart(a)
+
+        case a: LADemoFileCopyAbortRequest =>
+            copyDequeue(a.actor)
+    }
 
 }

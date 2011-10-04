@@ -12,35 +12,40 @@ The goal was to build a sample application, which utilizes Comet to give a user 
 
 ## How to run?
 
-Edit src/main/resources/props/default.props and change the path to something with files (e.g. your Downloads folder). It also needs **writing permissions** on that folder in order to write the copied files into a folder called "target" (right inside the specified dir).
+Edit src/main/resources/props/default.props in the lift/ as well as akka/ folder and change the path to something with files (e.g. your Downloads folder). It also needs **writing permissions** on that folder in order to write the copied files into a folder called "target" (right inside the specified dir).
 
 After that it's straight on, just run:
 
 ```
-mvn package install
+mvn install -pl akka/
 mvn jetty:run -pl lift/
 ```
 
 
 ## With Akka?
 
-If you simply want a local AkkaActor, then uncomment the 4 lines respectively in src/main/scala/ag/bett/demo/comet/Traitor.scala. If you search for "Akka", you'll find 2 blocks in both of the traits, simple (un)commeting will suffice.
+If you simply want a local AkkaActor, then uncomment the lines respectively in lift/src/main/scala/ag/bett/demo/comet/Comet.scala. There are dispatch-Blocks at lines 53-65 (Stats) and 116-134 (Copy). If you have a look at them, you'll see that they are pretty self explanatory.
 
 
 ## With Akka RemoteActor?
 
-Edit src/main/resources/props/default.props and change the akka.remote.host to the appropriate hostname or ip. Make sure you've ran **mvn package** before doing this.
+Edit lift/src/main/resources/props/default.props and change the akka.remote.host to the appropriate hostname or ip.
 
 ```
+mvn package -pl akka/
 cd akka/
 wget <a href="http://akka.io/downloads/akka-microkernel-1.2.zip">http://akka.io/downloads/akka-microkernel-1.2.zip</a>
 unzip akka-microkernel-1.2.zip
 
 cp akka.conf akka-microkernel-1.2/config/
-cp akka/target/akka.*-dependencies.jar akka-microkernel-1.2/deploy/
+cp target/akka.*-dependencies.jar akka-microkernel-1.2/deploy/
 
 sh ./akka-microkernel-1.2/bin/akka (or chmod +x)
 ```
+
+On another console start the liftweb application with:
+
+````mvn jetty:run -pl lift/````
 
 
 ## Thanks

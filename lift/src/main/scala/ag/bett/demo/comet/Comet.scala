@@ -17,8 +17,9 @@
 
 package ag.bett.demo.comet
 
+import ag.bett.demo.remote._
+import ag.bett.demo.lib._
 import ag.bett.demo.lib.{DateTimeHelpers => DTH}
-import ag.bett.demo.actor._
 
 import net.liftweb.http._
 import net.liftweb.actor._
@@ -34,7 +35,7 @@ import net.liftweb.util.Helpers._
 import net.liftweb.common._
 import net.liftweb.json._
 import net.liftweb.json.Serialization.write
-import akka.actor.Scheduler
+import akka.actor._
 
 import scalax.file.Path
 
@@ -48,14 +49,20 @@ import scala.xml._
 
 class StatComet extends CometActor {
 
-    /* LiftActor */
-    //val targetActor = LADemoLiftActor
-    //def reschedule = ActorPing.schedule(targetActor, targetRequest, 10 seconds)
+    /* LiftActor Local */
+    val targetActor = LADemoLiftActor
 
-    /* Akka */
+    /* Akka Actor Local */
     //val targetActor = LADemoAkkaActor.actor
-    val targetActor = LADemoAkkaRemoteActor.actor
-    def reschedule = Scheduler.scheduleOnce(targetActor, targetRequest, 10, TimeUnit.SECONDS)
+    
+    /* Akka Actor Remote */
+    //val targetActor = Actors.actorOf(classOf[LADemoAkkaRemoteBridgeService]).start()
+
+    /* LiftActor Local */
+    def reschedule = ActorPing.schedule(targetActor, targetRequest, 10 seconds)
+    
+    /* Akka Actor Remote */
+    //def reschedule = Scheduler.scheduleOnce(targetActor, targetRequest, 10, TimeUnit.SECONDS)
 
 
     override def defaultPrefix = Full("EasyPeasyStatsWithComet")
@@ -106,20 +113,23 @@ class StatComet extends CometActor {
 
 class CopyComet extends CometActor {
     
-    /* LiftActor */
-    //val targetActor = LADemoLiftActor
-    //def reschedule = request match {
-    //     case Full(a: LADemoFileCopyRequest) =>
-    //         ActorPing.schedule(targetActor, a, 10 seconds)
-    //     case _ =>
-    // }
-
-    /* Akka */
+    /* LiftActor Local */
+    val targetActor = LADemoLiftActor
+    
+    /* Akka Actor Local */
     //val targetActor = LADemoAkkaActor.actor
-    val targetActor = LADemoAkkaRemoteActor.actor
+    
+    /* Akka Actor Remote */
+    //val targetActor = Actors.actorOf(classOf[LADemoAkkaRemoteBridgeService]).start()
+
     def reschedule = request match {
         case Full(a: LADemoFileCopyRequest) =>
-            Scheduler.scheduleOnce(targetActor, a, 10, TimeUnit.SECONDS)
+        
+            /* LiftActor */
+            ActorPing.schedule(targetActor, a, 10 seconds)
+            
+            /* Akka Actor */
+            //Scheduler.scheduleOnce(targetActor, a, 10, TimeUnit.SECONDS)  // AkkaActor
         case _ =>
     }
 

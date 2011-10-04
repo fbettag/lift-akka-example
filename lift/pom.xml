@@ -15,9 +15,9 @@
 	
 	<dependencies>
 		<dependency>
-		    <groupId>ag.bett.demo</groupId>
-		    <artifactId>demo.libs</artifactId>
-		    <version>1.0</version>
+			<groupId>ag.bett.demo</groupId>
+			<artifactId>akka.backend</artifactId>
+			<version>1.0</version>
 		</dependency>
 	</dependencies>
 

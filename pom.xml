@@ -54,7 +54,6 @@
 	</pluginRepositories>
 
 	<modules>
-		<module>libs/</module>
 		<module>akka/</module>
 		<module>lift/</module>
 	</modules>
