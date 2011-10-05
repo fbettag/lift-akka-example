@@ -25,7 +25,7 @@ import net.liftweb.util._
 import net.liftweb.common._
 
 import org.joda.time._
-
+import java.util.concurrent.TimeUnit
 
 class LADemoAkkaRemoteBridgeService extends Actor {
     println("starting proxy")
@@ -34,50 +34,64 @@ class LADemoAkkaRemoteBridgeService extends Actor {
     val remoteHost = Props.get("akka.remote.host") openOr("127.0.0.1")
     val remotePort = Props.get("akka.remote.port").openOr("2552").toInt
     val remoteActor = remote.actorFor("lift-akka-example-service", remoteHost, remotePort)
+    val actorRef = scala.util.Random.nextLong
 
-    private def replyFromRemote(x: Any): Option[Any] =
+    protected def replyFromRemote(x: Any): Option[Any] =
         remoteActor !! x
 
-    // Comet Actor
-    
-    private var cometActor: Option[CometActor] = None
-    private def sendToComet(cometActor: CometActor, x: Option[Any]) {
+    protected def sendToComet(cometActor: CometActor, x: Option[Any]) {
         x match {
             case Some(a: Any) => cometActor ! a
             case _ =>
         }
     }
 
+    protected def sendToComet(cometActor: CometActor, x: Any) {
+        sendToComet(cometActor, Some(x))
+    }
+
+    protected def replyToComet(cometActor: CometActor, x: Option[Any]) {
+        x match {
+            case Some(a: Any) => cometActor ! a
+            case _ =>
+        }
+    }
 
     // Akka dispatching (rewriting for Remote)
     override def receive = {
         case a: LADemoStatGather =>
-            println("proxy in: " + a)
-            cometActor = Some(a.actor)
             sendToComet(a.actor, replyFromRemote(LADemoStatGatherRemote))
 
-        case a: LADemoStatInfo =>
-            cometActor match {
-                case Some(ca: CometActor) =>
-                    println("found cometactor!")
-                    ca ! a
-                case _ => println(" no cometactor found :(")
+        case a: LADemoFileCopyRequestList =>
+            sendToComet(a.actor, replyFromRemote(LADemoFileCopyRequestListRemote))
+
+        // We are doing polling over Akka Remote Actor an push useful stuff to the CometActor
+        case a: LADemoFileCopyRequest =>
+            replyFromRemote(LADemoFileCopyRequestRemote(actorRef, a.file)) match {
+
+                // Requeue if it started copying!
+                case Some("starting ;)") =>
+                    Scheduler.scheduleOnce(self, a, 500, TimeUnit.MILLISECONDS)
+                    
+                // Catch done, forward it and don't requeue
+                case Some(cd: LADemoFileCopyDone) =>
+                    sendToComet(a.actor, cd)
+                    
+                // Requeue for polling if there comes a status (done etc doesnt do polling)
+                case Some(cs: LADemoFileCopyStatus) =>
+                    sendToComet(a.actor, cs)
+                    Scheduler.scheduleOnce(self, a, 1, TimeUnit.SECONDS)
+                    
+                // Pass anything else back
+                case Some(any: Any) =>
+                    sendToComet(a.actor, any)
+                    
+                case _ =>
             }
-        // case LADemoFileCopyRequestList =>
-        //     self.reply(copyFileList)
-        // 
-        // case a: LADemoFileCopyRequest =>
-        //     copyQueueWithInfo(a) match {
-        //         case stat: LADemoFileCopyInternalStart =>
-        //             LAScheduler.execute(() => copyFileStart(stat))
-        //         case _ =>
-        //     }
-        // 
-        // case a: LADemoFileCopyInternalStart =>
-        //     copyFileStart(a)
-        // 
-        // case a: LADemoFileCopyAbortRequest =>
-        //     copyDequeue(a.actor)
+
+        case a: LADemoFileCopyAbortRequest =>
+            remoteActor ! LADemoFileCopyAbortRequestRemote(actorRef)
+            self.stop()
     }
 
 }

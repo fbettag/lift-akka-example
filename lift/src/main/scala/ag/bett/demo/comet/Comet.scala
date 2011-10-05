@@ -50,19 +50,16 @@ import scala.xml._
 class StatComet extends CometActor {
 
     /* LiftActor Local */
-    val targetActor = LADemoLiftActor
+    //val targetActor = LADemoLiftActor
+    //def reschedule = ActorPing.schedule(targetActor, targetRequest, 5 seconds)
 
     /* Akka Actor Local */
     //val targetActor = LADemoAkkaActor.actor
+    //def reschedule = Scheduler.scheduleOnce(targetActor, targetRequest, 5, TimeUnit.SECONDS)
     
-    /* Akka Actor Remote */
-    //val targetActor = Actors.actorOf(classOf[LADemoAkkaRemoteBridgeService]).start()
-
-    /* LiftActor Local */
-    def reschedule = ActorPing.schedule(targetActor, targetRequest, 10 seconds)
-    
-    /* Akka Actor Remote */
-    //def reschedule = Scheduler.scheduleOnce(targetActor, targetRequest, 10, TimeUnit.SECONDS)
+    /* Akka Actor Remote Bridge (per Comet Actor) */
+    val targetActor = Actors.actorOf(classOf[LADemoAkkaRemoteBridgeService]).start()    
+    def reschedule = Scheduler.scheduleOnce(targetActor, targetRequest, 5, TimeUnit.SECONDS)
 
 
     override def defaultPrefix = Full("EasyPeasyStatsWithComet")
@@ -114,22 +111,22 @@ class StatComet extends CometActor {
 class CopyComet extends CometActor {
     
     /* LiftActor Local */
-    val targetActor = LADemoLiftActor
-    
+    //val targetActor = LADemoLiftActor
+
     /* Akka Actor Local */
     //val targetActor = LADemoAkkaActor.actor
     
-    /* Akka Actor Remote */
-    //val targetActor = Actors.actorOf(classOf[LADemoAkkaRemoteBridgeService]).start()
+    /* Akka Actor Remote Bridge (per Comet Actor) */
+    val targetActor = Actors.actorOf(classOf[LADemoAkkaRemoteBridgeService]).start()    
 
     def reschedule = request match {
         case Full(a: LADemoFileCopyRequest) =>
         
             /* LiftActor */
-            ActorPing.schedule(targetActor, a, 10 seconds)
+            //ActorPing.schedule(targetActor, a, 10 seconds)
             
             /* Akka Actor */
-            //Scheduler.scheduleOnce(targetActor, a, 10, TimeUnit.SECONDS)  // AkkaActor
+            Scheduler.scheduleOnce(targetActor, a, 10, TimeUnit.SECONDS)  // AkkaActor
         case _ =>
     }
 
@@ -142,20 +139,22 @@ class CopyComet extends CometActor {
     // If this actor is not used for 10 seconds, destroy it
     override def lifespan: Box[TimeSpan] = Full(10 seconds)
 
-    val fileList: Map[String, Int] = {
-        val repl: Any = targetActor !! LADemoFileCopyRequestList
-        repl match {
-            case Full(copylist: LADemoFileCopyList) => copylist.files
-            case Some(copylist: LADemoFileCopyList) => copylist.files
-            case _ => Map()
-        }
-    }
+    targetActor ! LADemoFileCopyRequestList(this)
+
+    var fileList: Map[String, Int] = Map()
     
     def thankYouPartial(a: String): JsCmd = thankYouPartial(<strong>{a}</strong>)
     def thankYouPartial(a: NodeSeq): JsCmd = SetHtml("comet_copy_list", a)
 
     // Comet dispatcher, this will receive msgs from the Akka Backend
     override def lowPriority = {
+        case a: LADemoFileCopyList =>
+            fileList = a.files
+            partialUpdate(
+                JsRaw("console.log('LADemoFileCopyList: %s')".format(a.toString)) &
+                thankYouPartial(cssSel.apply(defaultHtml))
+            )         
+   
         case a: LADemoFileCopyQueue =>
             cachedStat = Full(a)
             reschedule

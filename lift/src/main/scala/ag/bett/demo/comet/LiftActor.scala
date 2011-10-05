@@ -18,7 +18,6 @@
 package ag.bett.demo.comet
 
 import ag.bett.demo.remote._
-import ag.bett.demo.lib._
 
 import net.liftweb.actor._
 import net.liftweb.common._
@@ -32,8 +31,8 @@ object LADemoLiftActor extends LiftActor
         case a: LADemoStatGather =>
             a.actor ! sysStatInfo
 
-        case LADemoFileCopyRequestList =>
-            reply(copyFileList)
+        case a: LADemoFileCopyRequestList =>
+            a.actor ! copyFileList
 
         case a: LADemoFileCopyRequest =>
             copyQueueWithInfo(a) match {

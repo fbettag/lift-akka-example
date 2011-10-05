@@ -15,10 +15,9 @@
 *
 */
 
-package ag.bett.demo.lib
+package ag.bett.demo.comet
 
 import ag.bett.demo.remote._
-
 import net.liftweb.http._
 import net.liftweb.actor._
 import net.liftweb.util._
@@ -37,21 +36,7 @@ import java.lang.reflect._
 import java.io._
 
 
-case class LADemoFileCopyRequestList
-case class LADemoFileCopyList(files: Map[String, Int])
-
-case class LADemoFileCopyRequest(actor: CometActor, file: String)
-case class LADemoFileCopyAbortRequest(actor: CometActor)
-
-sealed trait LADemoFileCopyInfo
-case class LADemoFileCopyQueue(waiting: Int) extends LADemoFileCopyInfo
-case class LADemoFileCopyStatus(file: String, percent: Int, speed: String, remaining: String) extends LADemoFileCopyInfo
-case class LADemoFileCopyDone(success: Boolean) extends LADemoFileCopyInfo
-
-sealed trait LADemoFileCopyInternal
-case class LADemoFileCopyInternalWait extends LADemoFileCopyInternal
-case class LADemoFileCopyInternalStart(source: Path, target: Path, actor: CometActor) extends LADemoFileCopyInternal
-
+/* For Local Actors */
 trait LADemoFileCopyMethods {	
     println("LADemoFileCopyMethods starting...")
 
@@ -63,9 +48,9 @@ trait LADemoFileCopyMethods {
             // Only list files bigger than 200MB
             var myList: Map[String, Int] = Map()
             if (copyPath.exists && copyPath.isDirectory && copyPath.canWrite)
-                copyPath.children().toList
-                    .filter(_.size.getOrElse(0L).toLong > 200*1024*1024)
-                    .foreach(f => myList = myList ++ Map(f.name.toString -> (f.size.getOrElse(0L).toLong / 1024 / 1024).toInt))
+            copyPath.children().toList
+            .filter(_.size.getOrElse(0L).toLong > 200*1024*1024)
+            .foreach(f => myList = myList ++ Map(f.name.toString -> (f.size.getOrElse(0L).toLong / 1024 / 1024).toInt))
 
             (copyPath / "targets").createDirectory(failIfExists=false)
             LADemoFileCopyList(myList)
@@ -127,7 +112,7 @@ trait LADemoFileCopyMethods {
 
         // Remove the actor from the queue and tell the frontend that we're finished.
         copyQueue = copyQueue - req.actor
-        req.actor ! LADemoFileCopyDone(process.exitValue == 0)
+        req.actor ! LADemoFileCopyDone(process.exitValue == 0, new DateTime)
     }
 
     println("LADemoFileCopyMethods started successfully")

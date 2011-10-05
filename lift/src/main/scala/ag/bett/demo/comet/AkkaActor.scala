@@ -18,7 +18,6 @@
 package ag.bett.demo.comet
 
 import ag.bett.demo.remote._
-import ag.bett.demo.lib._
 
 import akka.actor._
 import akka.actor.Actor._
@@ -41,8 +40,8 @@ class LADemoAkkaActorService extends Actor
         case a: LADemoStatGather =>
             a.actor ! sysStatInfo
 
-        case LADemoFileCopyRequestList =>
-            self.reply(copyFileList)
+        case a: LADemoFileCopyRequestList =>
+            a.actor ! copyFileList
 
         case a: LADemoFileCopyRequest =>
             copyQueueWithInfo(a) match {
@@ -50,9 +49,6 @@ class LADemoAkkaActorService extends Actor
                     LAScheduler.execute(() => copyFileStart(stat))
                 case _ =>
             }
-
-        case a: LADemoFileCopyInternalStart =>
-            copyFileStart(a)
 
         case a: LADemoFileCopyAbortRequest =>
             copyDequeue(a.actor)

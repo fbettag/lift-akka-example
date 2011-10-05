@@ -38,25 +38,23 @@ class LADemoAkkaRemoteActorService extends Actor
 
     override def receive = {
         case LADemoStatGatherRemote =>
-            val chan = self.channel
-            chan ! sysStatInfo
             self.reply(sysStatInfo)
 
-        // case LADemoFileCopyRequestList =>
-        //     self.reply(copyFileList)
-        // 
-        // case a: LADemoFileCopyRequest =>
-        //     copyQueueWithInfo(a) match {
-        //         case stat: LADemoFileCopyInternalStart =>
-        //             LAScheduler.execute(() => copyFileStart(stat))
-        //         case _ =>
-        //     }
-        // 
-        // case a: LADemoFileCopyInternalStart =>
-        //     copyFileStart(a)
-        // 
-        // case a: LADemoFileCopyAbortRequest =>
-        //     copyDequeue(a.actor)
+        case LADemoFileCopyRequestListRemote =>
+            self.reply(copyFileList)
+
+        case a: LADemoFileCopyRequestRemote =>
+            var result: Any = copyQueueWithInfo(a) match {
+                case stat: LADemoFileCopyInternalStartRemote =>
+                    LAScheduler.execute(() => copyFileStart(stat))
+                    "starting ;)"
+                case any: Any => any
+            }
+            self.reply(result)
+        
+        case a: LADemoFileCopyAbortRequestRemote =>
+            copyDequeue(a.actorRef)
+
     }
 
 }
