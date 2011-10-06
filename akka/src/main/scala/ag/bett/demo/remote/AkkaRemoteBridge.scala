@@ -50,12 +50,6 @@ class LADemoAkkaRemoteBridgeService extends Actor {
         sendToComet(cometActor, Some(x))
     }
 
-    protected def replyToComet(cometActor: CometActor, x: Option[Any]) {
-        x match {
-            case Some(a: Any) => cometActor ! a
-            case _ =>
-        }
-    }
 
     // Akka dispatching (rewriting for Remote)
     override def receive = {

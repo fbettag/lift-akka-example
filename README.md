@@ -12,7 +12,7 @@ The goal was to build a sample application, which utilizes Comet to give a user 
 
 ## How to run?
 
-Edit src/main/resources/props/default.props in the lift/ as well as akka/ folder and change the path to something with files (e.g. your Downloads folder). It also needs **writing permissions** on that folder in order to write the copied files into a folder called "target" (right inside the specified dir).
+Edit src/main/resources/props/default.props in the lift/ folder and change the path to something with files (e.g. your Downloads folder). It also needs **writing permissions** on that folder in order to write the copied files into a folder called "target" (right inside the specified dir).
 
 After that it's straight on, just run:
 
@@ -24,17 +24,53 @@ mvn jetty:run -pl lift/
 
 ## With Akka?
 
-If you simply want a local AkkaActor, then uncomment the lines respectively in lift/src/main/scala/ag/bett/demo/comet/Comet.scala. There are dispatch-Blocks at lines 53-65 (Stats) and 116-134 (Copy). If you have a look at them, you'll see that they are pretty self explanatory.
+If you simply want a local AkkaActor, then uncomment the lines respectively in lift/src/main/scala/ag/bett/demo/comet/Comet.scala. There are dispatch-Blocks at around lines 53-65 (Stats) and 116-134 (Copy). Please make sure you only use one variant, otherwise it won't compile.
+
+````scala
+/* LiftActor Local */
+val targetActor = LADemoLiftActor
+def reschedule = ActorPing.schedule(targetActor, targetRequest, 5 seconds)
+
+/* Akka Actor Local */
+val targetActor = LADemoAkkaActor.actor
+def reschedule = Scheduler.scheduleOnce(targetActor, targetRequest, 5, TimeUnit.SECONDS)
+
+/* Akka Actor Remote Bridge (per Comet Actor) */
+val targetActor = Actors.actorOf(classOf[LADemoAkkaRemoteBridgeService]).start()    
+def reschedule = Scheduler.scheduleOnce(targetActor, targetRequest, 5, TimeUnit.SECONDS)
+````
+
+````scala
+/* LiftActor Local */
+val targetActor = LADemoLiftActor
+
+/* Akka Actor Local */
+val targetActor = LADemoAkkaActor.actor
+
+/* Akka Actor Remote Bridge (per Comet Actor) */
+val targetActor = Actors.actorOf(classOf[LADemoAkkaRemoteBridgeService]).start()    
+
+def reschedule = request match {
+    case Full(a: LADemoFileCopyRequest) =>
+    
+        /* LiftActor */
+        ActorPing.schedule(targetActor, a, 10 seconds)
+        
+        /* Akka Actor */
+        Scheduler.scheduleOnce(targetActor, a, 10, TimeUnit.SECONDS)  // AkkaActor
+    case _ =>
+}
+````
 
 
 ## With Akka RemoteActor?
 
-Edit lift/src/main/resources/props/default.props and change the akka.remote.host to the appropriate hostname or ip.
+Edit lift/src/main/resources/props/default.props and change the akka.remote.host to the appropriate hostname or ip. Also edit akka/src/main/scala/ag/bett/demo/remote/FileCopy.scala around line 67 and correct the Path for your files.
 
 ```
 mvn package -pl akka/
 cd akka/
-wget <a href="http://akka.io/downloads/akka-microkernel-1.2.zip">http://akka.io/downloads/akka-microkernel-1.2.zip</a>
+wget [http://akka.io/downloads/akka-microkernel-1.2.zip](http://akka.io/downloads/akka-microkernel-1.2.zip)
 unzip akka-microkernel-1.2.zip
 
 cp akka.conf akka-microkernel-1.2/config/
