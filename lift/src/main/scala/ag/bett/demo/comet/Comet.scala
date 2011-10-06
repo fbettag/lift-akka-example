@@ -50,16 +50,16 @@ import scala.xml._
 class StatComet extends CometActor {
 
     /* LiftActor Local */
-    //val targetActor = LADemoLiftActor
-    //def reschedule = ActorPing.schedule(targetActor, targetRequest, 5 seconds)
+    val targetActor = LADemoLiftActor
+    def reschedule = ActorPing.schedule(targetActor, targetRequest, 5 seconds)
 
     /* Akka Actor Local */
     //val targetActor = LADemoAkkaActor.actor
     //def reschedule = Scheduler.scheduleOnce(targetActor, targetRequest, 5, TimeUnit.SECONDS)
     
     /* Akka Actor Remote Bridge (per Comet Actor) */
-    val targetActor = Actors.actorOf(classOf[LADemoAkkaRemoteBridgeService]).start()    
-    def reschedule = Scheduler.scheduleOnce(targetActor, targetRequest, 5, TimeUnit.SECONDS)
+    //val targetActor = Actors.actorOf(classOf[LADemoAkkaRemoteBridgeService]).start()    
+    //def reschedule = Scheduler.scheduleOnce(targetActor, targetRequest, 5, TimeUnit.SECONDS)
 
 
     override def defaultPrefix = Full("EasyPeasyStatsWithComet")
@@ -111,22 +111,22 @@ class StatComet extends CometActor {
 class CopyComet extends CometActor {
     
     /* LiftActor Local */
-    //val targetActor = LADemoLiftActor
+    val targetActor = LADemoLiftActor
 
     /* Akka Actor Local */
     //val targetActor = LADemoAkkaActor.actor
     
     /* Akka Actor Remote Bridge (per Comet Actor) */
-    val targetActor = Actors.actorOf(classOf[LADemoAkkaRemoteBridgeService]).start()    
+    //val targetActor = Actors.actorOf(classOf[LADemoAkkaRemoteBridgeService]).start()    
 
     def reschedule = request match {
         case Full(a: LADemoFileCopyRequest) =>
         
             /* LiftActor */
-            //ActorPing.schedule(targetActor, a, 10 seconds)
+            ActorPing.schedule(targetActor, a, 10 seconds)
             
             /* Akka Actor */
-            Scheduler.scheduleOnce(targetActor, a, 10, TimeUnit.SECONDS)  // AkkaActor
+            //Scheduler.scheduleOnce(targetActor, a, 10, TimeUnit.SECONDS)  // AkkaActor
         case _ =>
     }
 

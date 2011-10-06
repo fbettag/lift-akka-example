@@ -62,9 +62,9 @@ case class LADemoFileCopyInternalStartRemote(source: Path, target: Path, actorRe
 trait LADemoFileCopyRemoteMethods {	
     println("LADemoFileCopyRemoteMethods starting...")
 
-    val copyMaxProcs = 5
+    val copyMaxProcs = 2
 
-    val copyPath = Path("/Volumes/Data/Downloads") //Path("/tmp/i.didnt.configure.jack")
+    val copyPath = Path("/tmp/i.didnt.configure.jack")
     lazy val copyFileList: LADemoFileCopyList = {
         try {
             // Only list files bigger than 200MB
